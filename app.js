@@ -12,8 +12,8 @@ var normalsArray = [];
 var near = -10;
 var far = 10;
 var radius = 1.5;
-var theta  = 0.0;
-var phi    = 0.0;
+var theta  = 0.0; // rotation of the camera about the y axis
+var phi    = 0.0; // rotation of the camera about the z axis
 // var dr = 5.0 * Math.PI/180.0;
 
 var left = -3.0;
@@ -21,6 +21,9 @@ var right = 3.0;
 var ytop =3.0;
 var bottom = -3.0;
 
+// va points straight down
+// vb, vc, and vd point up and are spread equally around in a circle
+// all vectors are normalized
 var va = vec4(0.0, 0.0, -1.0,1);
 var vb = vec4(0.0, 0.942809, 0.333333, 1);
 var vc = vec4(-0.816497, -0.471405, 0.333333, 1);
@@ -80,7 +83,7 @@ function configureCubeMap() {
 }
 
 
-    
+// add the vectors of a triangle to normalsArray    
 function triangle(a, b, c) {
 
 
@@ -99,7 +102,7 @@ function triangle(a, b, c) {
      
 }
 
-
+// divide a triangle made of vecotors a b and c into count number of triangles
 function divideTriangle(a, b, c, count) {
     if ( count > 0 ) {
                 
@@ -121,7 +124,7 @@ function divideTriangle(a, b, c, count) {
     }
 }
 
-
+// create a tetrahedron with enough sides to look like a triangle
 function tetrahedron(a, b, c, d, n) {
     divideTriangle(a, b, c, n);
     divideTriangle(d, c, b, n);
@@ -131,11 +134,14 @@ function tetrahedron(a, b, c, d, n) {
 
 window.onload = function init() {
 
+   // Get canvas element
     canvas = document.getElementById( "gl-canvas" );
     
+   // Initialize webgl
     gl = WebGLUtils.setupWebGL( canvas );
     if ( !gl ) { alert( "WebGL isn't available" ); }
 
+    // set viewport to cavas and background colour to white
     gl.viewport( 0, 0, canvas.width, canvas.height );
     gl.clearColor( 1.0, 1.0, 1.0, 1.0 );
     
@@ -143,42 +149,52 @@ window.onload = function init() {
 
     //
     //  Load shaders and initialize attribute buffers
-    //
+    //  Shaders are found in index.html
     var program = initShaders( gl, "vertex-shader", "fragment-shader" );
     gl.useProgram( program );
     
 
+   // light and material interaction
     ambientProduct = mult(lightAmbient, materialAmbient);
     diffuseProduct = mult(lightDiffuse, materialDiffuse);
     specularProduct = mult(lightSpecular, materialSpecular);
 
-    
+   // subdivide into many triangles that make up a circle
+   // put resulting points into normalsArray
     tetrahedron(va, vb, vc, vd, numTimesToSubdivide);
 
+    // create buffers for sphere = 1,2,3,4,5,6
     var nBuffer = gl.createBuffer();
     gl.bindBuffer( gl.ARRAY_BUFFER, nBuffer);
     gl.bufferData( gl.ARRAY_BUFFER, flatten(normalsArray), gl.STATIC_DRAW );
     
+    // create variable for attribute vNormal
     var vNormal = gl.getAttribLocation( program, "vNormal" );
     gl.vertexAttribPointer( vNormal, 3, gl.FLOAT, false, 0, 0 );
     gl.enableVertexAttribArray( vNormal);
 
+    // create buffer for array of points = [1,2,3][4,5,6]
     var vBuffer = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, vBuffer);
     gl.bufferData(gl.ARRAY_BUFFER, flatten(pointsArray), gl.STATIC_DRAW);
     
+    // create variable for attribute vPosition
     var vPosition = gl.getAttribLocation( program, "vPosition");
     gl.vertexAttribPointer(vPosition, 4, gl.FLOAT, false, 0, 0);
     gl.enableVertexAttribArray(vPosition);
     
+    // create variables for Uniforms modelViewMatrix, projectionMatrix, and normalMatrix
     modelViewMatrixLoc = gl.getUniformLocation( program, "modelViewMatrix" );
     projectionMatrixLoc = gl.getUniformLocation( program, "projectionMatrix" );
     normalMatrixLoc = gl.getUniformLocation( program, "normalMatrix" );
     
+    // create texture map
     configureCubeMap();
     gl.activeTexture( gl.TEXTURE0 );
     gl.uniform1i(gl.getUniformLocation(program, "texMap"),0); 
 
+    // set ambientProduct, diffuseProduct, and specularProduct to values determined before
+    // set lightPosition, and materialShininess to constants set at the beginning
     gl.uniform4fv( gl.getUniformLocation(program, 
        "ambientProduct"),flatten(ambientProduct) );
     gl.uniform4fv( gl.getUniformLocation(program, 
@@ -190,18 +206,38 @@ window.onload = function init() {
     gl.uniform1f( gl.getUniformLocation(program, 
        "shininess"),materialShininess );
 
+      // draw everything
     render();
 }
 
 
 function render() {
-    
+    // clear the screen
     gl.clear( gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
     
+   
+    // equation of a sphere in x y z coordinates
     eye = vec3(radius*Math.sin(theta)*Math.cos(phi), 
         radius*Math.sin(theta)*Math.sin(phi), radius*Math.cos(theta));
+   // eye = 0, 0, 1.5
 
+   // eye is the position of the camera
+   // at is the position where the camera is looking at (the origin)
+   // up the direction up to the camera (y is our up/down vertex)
     modelViewMatrix = lookAt(eye, at , up);
+
+    // create a matrix with 2/width, 2/hight, -2/distance along the diagonal
+    // along the bottom edge is -(left+right)/width etc.
+    // 2/w        0           0           0
+    // 0          2/h         0           0
+    // 0          0           -2/d        0
+    // -(l+r)/w   -(t+b)/h     -(f+n)/d   0
+    
+    // which for us looks like
+    // 2/6        0           0           0
+    // 0          2/6         0           0
+    // 0          0           -2/6        0
+    // -(0)/w     -(0)/h      -(0)/d      0
     projectionMatrix = ortho(left, right, bottom, ytop, near, far);
     
     // normal matrix only really need if there is nonuniform scaling
@@ -213,11 +249,15 @@ function render() {
         vec3(modelViewMatrix[1][0], modelViewMatrix[1][1], modelViewMatrix[1][2]),
         vec3(modelViewMatrix[2][0], modelViewMatrix[2][1], modelViewMatrix[2][2])
     ];
-            
+   
+    //
     gl.uniformMatrix4fv(modelViewMatrixLoc, false, flatten(modelViewMatrix) );
     gl.uniformMatrix4fv(projectionMatrixLoc, false, flatten(projectionMatrix) );
     gl.uniformMatrix3fv(normalMatrixLoc, false, flatten(normalMatrix) );
         
+
+    // index is a count of the points in are array
+    // draw each triangle on its own
     for( var i=0; i<index; i+=3) 
         gl.drawArrays( gl.TRIANGLES, i, 3 );
 
