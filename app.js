@@ -55,9 +55,21 @@ var modelViewMatrixLoc, projectionMatrixLoc;
 
 var normalMatrix, normalMatrixLoc;
 
-var eye;
+var xeye = 0;
+var yeye = 0;
+var zeye = 1.5;
+var eye = vec3(xeye, yeye, zeye);
 var at = vec3(0.0, 0.0, 0.0);
 var up = vec3(0.0, 1.0, 0.0);
+
+var moving = false;
+var movementVector = vec3(0,0,0);
+var start = vec3(0,0,0);
+var end = vec3(0,0,0);
+var sign = 1;
+
+var arc_x = 0;
+var arc_y = 0;
 
 function configureCubeMap() {
 
@@ -208,6 +220,94 @@ window.onload = function init() {
 
       // draw everything
     render();
+
+    canvas.onmousedown = function(ev) {
+        var mx = ev.clientX, my = ev.clientY;
+        mx = mx/canvas.width -0.5;
+        my = my/canvas.height -0.5;
+        mx = mx*2;
+        my = my*-2;
+        if((-0.3 <= mx && mx <= 0.3) && (-0.3 <= my && my <= 0.3)){
+            moving = true;
+            start = vec3(mx, my, radius);
+        }
+        // Check bacteria from top to bottom (reverse order from how they are displayed on screen)
+        // So that the bateria on top will deleted not the one on the bottom
+        //radius = ~0.3
+
+    }
+
+    canvas.onmouseup = function(ev) {
+        var mx = ev.clientX, my = ev.clientY;
+        mx = mx/canvas.width -0.5;
+        my = my/canvas.height -0.5;
+        mx = mx*2;
+        my = my*-2;
+        moving = false;
+        // console.log(vec3(mx, my, radius));
+        start = end;
+        // Check bacteria from top to bottom (reverse order from how they are displayed on screen)
+        // So that the bateria on top will deleted not the one on the bottom
+        //radius = ~0.3
+
+    }
+
+    canvas.onmousemove = function(ev) {
+        var mx = ev.clientX, my = ev.clientY;
+        mx = mx/canvas.width -0.5;
+        my = my/canvas.height -0.5;
+        mx = mx*2;
+        my = my*-2;
+        if((-0.3 <= mx && mx <= 0.3) && (-0.3 <= my && my <= 0.3)){
+            if (moving) {
+                // console.log('moving');
+                old_arc_x = arc_x;
+                old_arc_y = arc_y;
+                end = vec3(mx, my, radius);
+                delta_x = start[0] - end[0];
+                delta_y =  start[1] - end[1];
+                movementVector = vec3(delta_x, delta_y, radius);
+                console.log("delta_x = " + movementVector[0]/12);
+                change_x = movementVector[0]/12;
+                angle_x = Math.asin((change_x/2) / 1)
+                console.log("angle_x = " + angle_x);
+
+                // console.log("delta_y = " + movementVector[1]/12);
+                change_y = movementVector[1]/12;
+                angle_y = Math.asin((change_y/2) / 1);
+                // console.log("angle_y = " + angle_y);
+
+                arc_x = 2*Math.PI*3*(angle_x);
+                arc_y = 2*Math.PI*3*(angle_y);
+                console.log("arc_x = " + arc_x);
+                // console.log("arc_y = " + arc_y);
+
+                arc_x = arc_x + old_arc_x;
+                arc_y = arc_y + old_arc_y;
+
+                if (arc_x < -6) {
+                    arc_x += 12;
+                } else if (arc_x > 6) {
+                    arc_x -= 12;
+                }
+                if (arc_y <= -6) {
+                    arc_y += 12;
+                } else if (arc_y > 6) {
+                    arc_y -= 12;
+                }
+                console.log("arc_x = " + arc_x);
+                xeye = arc_x;
+                yeye = arc_y;
+                
+                eye = vec3(xeye, yeye, zeye);
+            } 
+        }
+        
+        // Check bacteria from top to bottom (reverse order from how they are displayed on screen)
+        // So that the bateria on top will deleted not the one on the bottom
+        //radius = ~0.3
+
+    }
 }
 
 
@@ -217,9 +317,9 @@ function render() {
     
    
     // equation of a sphere in x y z coordinates
-    eye = vec3(radius*Math.sin(theta)*Math.cos(phi), 
-        radius*Math.sin(theta)*Math.sin(phi), radius*Math.cos(theta));
-   // eye = 0, 0, 1.5
+    //eye = vec3(radius*Math.sin(theta)*Math.cos(phi), 
+    // /    radius*Math.sin(theta)*Math.sin(phi), radius*Math.cos(theta));
+    // eye = vec3(0, yeye, radius);
 
    // eye is the position of the camera
    // at is the position where the camera is looking at (the origin)
