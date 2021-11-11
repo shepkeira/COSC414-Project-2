@@ -5,10 +5,10 @@
 ### To Do
 #### Keira's Part
 - [x] Draw a sphere centered at origin
-- [ ] The player can drag the sphere to rotate to look for bacteria (under interactive control).
+- [x] The player can drag the sphere to rotate to look for bacteria (under interactive control).
 - [ ] User guide & Gallery of screen captures
 - [ ] Video Demonstration
-- [ ] (Bonus) Lighting is used. Use GUI control to enable or disable lighting.
+- [x] (Bonus) Lighting is used. Use GUI control to enable or disable lighting.
 
 #### Abhiek's Part
 - [ ] The game can randomly generate up to a fixed number (say 10) of different bacteria (each with a different color) - Bacteria appear on the surface of the sphere starting at an arbitrary spot on the surface - The bacteria appear as a colored circular patchon the surface of the sphere.
