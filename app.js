@@ -1,5 +1,6 @@
 var canvas;
 var gl;
+var button;
 
 var numTimesToSubdivide = 3;
  
@@ -34,6 +35,8 @@ var lightAmbient = vec4(0.2, 0.2, 0.2, 1.0 );
 var lightDiffuse = vec4( 1.0, 1.0, 1.0, 1.0 );
 var lightSpecular = vec4( 1.0, 1.0, 1.0, 1.0 );
 
+var lightsOff = vec4(0.0, 0.0, 0.0, 0.0);
+
 var materialAmbient = vec4( 1.0, 0.0, 1.0, 1.0 );
 var materialDiffuse = vec4( 1.0, 0.8, 0.0, 1.0 );
 var materialSpecular = vec4( 1.0, 1.0, 1.0, 1.0 );
@@ -52,6 +55,8 @@ var ambientColor, diffuseColor, specularColor;
 
 var modelViewMatrix, projectionMatrix;
 var modelViewMatrixLoc, projectionMatrixLoc;
+
+var ambiantLoc, diffuseLoc, specularLoc, lightPosLo, shininessLoc;
 
 var normalMatrix, normalMatrixLoc;
 
@@ -145,6 +150,7 @@ function tetrahedron(a, b, c, d, n) {
 }
 
 window.onload = function init() {
+    button = document.getElementById("toggleLights");
 
    // Get canvas element
     canvas = document.getElementById( "gl-canvas" );
@@ -207,16 +213,17 @@ window.onload = function init() {
 
     // set ambientProduct, diffuseProduct, and specularProduct to values determined before
     // set lightPosition, and materialShininess to constants set at the beginning
-    gl.uniform4fv( gl.getUniformLocation(program, 
-       "ambientProduct"),flatten(ambientProduct) );
-    gl.uniform4fv( gl.getUniformLocation(program, 
-       "diffuseProduct"),flatten(diffuseProduct) );
-    gl.uniform4fv( gl.getUniformLocation(program, 
-       "specularProduct"),flatten(specularProduct) );	
-    gl.uniform4fv( gl.getUniformLocation(program, 
-       "lightPosition"),flatten(lightPosition) );
-    gl.uniform1f( gl.getUniformLocation(program, 
-       "shininess"),materialShininess );
+
+    ambiantLoc = gl.getUniformLocation(program, "ambientProduct");
+    diffuseLoc = gl.getUniformLocation(program, "diffuseProduct");
+    specularLoc = gl.getUniformLocation(program, "specularProduct");
+    lightPosLoc = gl.getUniformLocation(program, "lightPosition");
+    shininessLoc = gl.getUniformLocation(program, "shininess");
+    gl.uniform4fv(ambiantLoc ,flatten(ambientProduct) );
+    gl.uniform4fv(diffuseLoc ,flatten(diffuseProduct) );
+    gl.uniform4fv(specularLoc ,flatten(specularProduct) );	
+    gl.uniform4fv(lightPosLoc ,flatten(lightPosition) );
+    gl.uniform1f(shininessLoc ,materialShininess );
 
       // draw everything
     render();
@@ -311,7 +318,7 @@ window.onload = function init() {
 }
 
 
-function render() {
+function render(program) {
     // clear the screen
     gl.clear( gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
     
@@ -354,6 +361,10 @@ function render() {
     gl.uniformMatrix4fv(modelViewMatrixLoc, false, flatten(modelViewMatrix) );
     gl.uniformMatrix4fv(projectionMatrixLoc, false, flatten(projectionMatrix) );
     gl.uniformMatrix3fv(normalMatrixLoc, false, flatten(normalMatrix) );
+
+    gl.uniform4fv(ambiantLoc ,flatten(ambientProduct) );
+    gl.uniform4fv(diffuseLoc ,flatten(diffuseProduct) );
+    gl.uniform4fv(specularLoc ,flatten(specularProduct) );
         
 
     // index is a count of the points in are array
@@ -362,4 +373,30 @@ function render() {
         gl.drawArrays( gl.TRIANGLES, i, 3 );
 
     window.requestAnimFrame(render);
+}
+
+function toggleLights() {
+    button = document.getElementById("toggleLights");
+
+    if(lightAmbient[0] == 1) {
+        console.log("lights on");
+        lightAmbient = vec4(0.2, 0.2, 0.2, 1.0 );
+        lightDiffuse = vec4( 1.0, 1.0, 1.0, 1.0 );
+        lightSpecular = vec4( 1.0, 1.0, 1.0, 1.0 );
+
+        ambientProduct = mult(lightAmbient, materialAmbient);
+        diffuseProduct = mult(lightDiffuse, materialDiffuse);
+        specularProduct = mult(lightSpecular, materialSpecular);
+    } else {
+        console.log("lights off");
+        lightAmbient = vec4(1,0,0,0);
+        lightDiffuse = lightsOff;
+        lightSpecular = lightsOff;
+
+        ambientProduct = mult(lightAmbient, materialAmbient);
+        diffuseProduct = mult(lightDiffuse, materialDiffuse);
+        specularProduct = mult(lightSpecular, materialSpecular);
+    }
+
+    
 }

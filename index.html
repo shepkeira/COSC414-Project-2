@@ -69,7 +69,7 @@ main()
 
     gl_Position = projectionMatrix * modelViewMatrix * vPosition;
     
-    fColor = ambient + diffuse +specular;
+    fColor = ambient + diffuse + specular;
 
     fColor.a = 1.0;
 }
@@ -102,5 +102,7 @@ main()
 <canvas id="gl-canvas" width="512" height="512" style="border:black 3px solid;">
 Oops ... your browser doesn't support the HTML5 canvas element
 </canvas>
+<br>
+<button type='button' id="toggleLights" onclick="toggleLights()">Toggle Lights</button>
 </body>
 </html>
