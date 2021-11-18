@@ -1,5 +1,6 @@
 var canvas;
 var gl;
+var button;
 
 var numTimesToSubdivide = 3;
  
@@ -7,6 +8,7 @@ var index = 0;
 
 var pointsArray = [];
 var normalsArray = [];
+var colourArray = [];
 
 
 var near = -10;
@@ -34,6 +36,8 @@ var lightAmbient = vec4(0.2, 0.2, 0.2, 1.0 );
 var lightDiffuse = vec4( 1.0, 1.0, 1.0, 1.0 );
 var lightSpecular = vec4( 1.0, 1.0, 1.0, 1.0 );
 
+var lightsOff = vec4(0.0, 0.0, 0.0, 0.0);
+
 var materialAmbient = vec4( 1.0, 0.0, 1.0, 1.0 );
 var materialDiffuse = vec4( 1.0, 0.8, 0.0, 1.0 );
 var materialSpecular = vec4( 1.0, 1.0, 1.0, 1.0 );
@@ -53,35 +57,28 @@ var ambientColor, diffuseColor, specularColor;
 var modelViewMatrix, projectionMatrix;
 var modelViewMatrixLoc, projectionMatrixLoc;
 
+var ambiantLoc, diffuseLoc, specularLoc, lightPosLo, shininessLoc;
+
 var normalMatrix, normalMatrixLoc;
 
-var eye;
+var xeye = 0;
+var yeye = 0;
+var zeye = 1.5;
+var eye = vec3(xeye, yeye, zeye);
 var at = vec3(0.0, 0.0, 0.0);
 var up = vec3(0.0, 1.0, 0.0);
 
-function configureCubeMap() {
+var moving = false;
+var movementVector = vec3(0,0,0);
+var start = vec3(0,0,0);
+var end = vec3(0,0,0);
+var sign = 1;
 
-    cubeMap = gl.createTexture();
+var arc_x = 0;
+var arc_y = 0;
 
-    gl.bindTexture(gl.TEXTURE_CUBE_MAP, cubeMap);
-    gl.texImage2D(gl.TEXTURE_CUBE_MAP_POSITIVE_X ,0,gl.RGBA,
-       1,1,0,gl.RGBA,gl.UNSIGNED_BYTE, red);
-    gl.texImage2D(gl.TEXTURE_CUBE_MAP_NEGATIVE_X ,0,gl.RGBA,
-       1,1,0,gl.RGBA,gl.UNSIGNED_BYTE, green);
-    gl.texImage2D(gl.TEXTURE_CUBE_MAP_POSITIVE_Y ,0,gl.RGBA,
-       1,1,0,gl.RGBA,gl.UNSIGNED_BYTE, blue);
-    gl.texImage2D(gl.TEXTURE_CUBE_MAP_NEGATIVE_Y ,0,gl.RGBA,
-       1,1,0,gl.RGBA,gl.UNSIGNED_BYTE, cyan);
-    gl.texImage2D(gl.TEXTURE_CUBE_MAP_POSITIVE_Z ,0,gl.RGBA,
-       1,1,0,gl.RGBA,gl.UNSIGNED_BYTE, yellow);
-    gl.texImage2D(gl.TEXTURE_CUBE_MAP_NEGATIVE_Z ,0,gl.RGBA,
-       1,1,0,gl.RGBA,gl.UNSIGNED_BYTE, magenta);
-    
-
-    gl.texParameteri(gl.TEXTURE_CUBE_MAP,gl.TEXTURE_MAG_FILTER,gl.NEAREST);
-    gl.texParameteri(gl.TEXTURE_CUBE_MAP,gl.TEXTURE_MIN_FILTER,gl.NEAREST);
-}
-
+var colour = vec4(1, 0, 0, 1);
+var colourAttributeLocation;
 
 // add the vectors of a triangle to normalsArray    
 function triangle(a, b, c) {
@@ -91,12 +88,15 @@ function triangle(a, b, c) {
      pointsArray.push(a);
      pointsArray.push(b);      
      pointsArray.push(c);
-    
      // normals are vectors
      
      normalsArray.push(a[0],a[1], a[2]);
      normalsArray.push(b[0],b[1], b[2]);
      normalsArray.push(c[0],c[1], c[2]);
+
+     colourArray.push(colour[0],colour[1], colour[2], colour[3]);
+     colourArray.push(colour[0],colour[1], colour[2], colour[3]);
+     colourArray.push(colour[0],colour[1], colour[2], colour[3]);
 
      index += 3;
      
@@ -132,7 +132,24 @@ function tetrahedron(a, b, c, d, n) {
     divideTriangle(a, c, d, n);
 }
 
+function randomCordinates() {
+    var r = 0.3;
+    var z = Math.random()*0.3;
+    if (Math.random()<0.5)
+     z = -z;
+
+    var phi = Math.acos(z/r);
+    var theta = math.random()*2*pi;
+    var x = Math.cos(theta)*r*Math.sin(phi);
+    var y = Math.sin(theta)*r*Math.sin(phi);
+
+    rc = vec3(x,y,z);
+    
+    return rc;
+}
+
 window.onload = function init() {
+    button = document.getElementById("toggleLights");
 
    // Get canvas element
     canvas = document.getElementById( "gl-canvas" );
@@ -162,12 +179,13 @@ window.onload = function init() {
    // subdivide into many triangles that make up a circle
    // put resulting points into normalsArray
     tetrahedron(va, vb, vc, vd, numTimesToSubdivide);
-
+    // console.log("points: " +pointsArray);
+    // console.log("colours: " + colourArray);
     // create buffers for sphere = 1,2,3,4,5,6
     var nBuffer = gl.createBuffer();
     gl.bindBuffer( gl.ARRAY_BUFFER, nBuffer);
     gl.bufferData( gl.ARRAY_BUFFER, flatten(normalsArray), gl.STATIC_DRAW );
-    
+    // console.log("normal array " + normalsArray.length);
     // create variable for attribute vNormal
     var vNormal = gl.getAttribLocation( program, "vNormal" );
     gl.vertexAttribPointer( vNormal, 3, gl.FLOAT, false, 0, 0 );
@@ -177,49 +195,142 @@ window.onload = function init() {
     var vBuffer = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, vBuffer);
     gl.bufferData(gl.ARRAY_BUFFER, flatten(pointsArray), gl.STATIC_DRAW);
-    
+    // console.log("points array " + pointsArray.length);
     // create variable for attribute vPosition
     var vPosition = gl.getAttribLocation( program, "vPosition");
     gl.vertexAttribPointer(vPosition, 4, gl.FLOAT, false, 0, 0);
     gl.enableVertexAttribArray(vPosition);
+
+    var cBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, cBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(flatten(colourArray)), gl.STATIC_DRAW);
+    // console.log("points array " + colourArray.length);
+
+    vertColour = gl.getAttribLocation(program, "vColour");
+    gl.vertexAttribPointer(vertColour, 4, gl.FLOAT, false, 4 * Float32Array.BYTES_PER_ELEMENT, 0);
+    gl.enableVertexAttribArray(vertColour);
     
     // create variables for Uniforms modelViewMatrix, projectionMatrix, and normalMatrix
     modelViewMatrixLoc = gl.getUniformLocation( program, "modelViewMatrix" );
     projectionMatrixLoc = gl.getUniformLocation( program, "projectionMatrix" );
     normalMatrixLoc = gl.getUniformLocation( program, "normalMatrix" );
-    
-    // create texture map
-    configureCubeMap();
-    gl.activeTexture( gl.TEXTURE0 );
-    gl.uniform1i(gl.getUniformLocation(program, "texMap"),0); 
 
     // set ambientProduct, diffuseProduct, and specularProduct to values determined before
     // set lightPosition, and materialShininess to constants set at the beginning
-    gl.uniform4fv( gl.getUniformLocation(program, 
-       "ambientProduct"),flatten(ambientProduct) );
-    gl.uniform4fv( gl.getUniformLocation(program, 
-       "diffuseProduct"),flatten(diffuseProduct) );
-    gl.uniform4fv( gl.getUniformLocation(program, 
-       "specularProduct"),flatten(specularProduct) );	
-    gl.uniform4fv( gl.getUniformLocation(program, 
-       "lightPosition"),flatten(lightPosition) );
-    gl.uniform1f( gl.getUniformLocation(program, 
-       "shininess"),materialShininess );
+
+    ambiantLoc = gl.getUniformLocation(program, "ambientProduct");
+    diffuseLoc = gl.getUniformLocation(program, "diffuseProduct");
+    specularLoc = gl.getUniformLocation(program, "specularProduct");
+    lightPosLoc = gl.getUniformLocation(program, "lightPosition");
+    shininessLoc = gl.getUniformLocation(program, "shininess");
+    gl.uniform4fv(ambiantLoc ,flatten(ambientProduct) );
+    gl.uniform4fv(diffuseLoc ,flatten(diffuseProduct) );
+    gl.uniform4fv(specularLoc ,flatten(specularProduct) );	
+    gl.uniform4fv(lightPosLoc ,flatten(lightPosition) );
+    gl.uniform1f(shininessLoc ,materialShininess );
 
       // draw everything
     render();
+
+    canvas.onmousedown = function(ev) {
+        var mx = ev.clientX, my = ev.clientY;
+        mx = mx/canvas.width -0.5;
+        my = my/canvas.height -0.5;
+        mx = mx*2;
+        my = my*-2;
+        if((-0.3 <= mx && mx <= 0.3) && (-0.3 <= my && my <= 0.3)){
+            moving = true;
+            start = vec3(mx, my, radius);
+        }
+        // Check bacteria from top to bottom (reverse order from how they are displayed on screen)
+        // So that the bateria on top will deleted not the one on the bottom
+        //radius = ~0.3
+
+    }
+
+    canvas.onmouseup = function(ev) {
+        var mx = ev.clientX, my = ev.clientY;
+        mx = mx/canvas.width -0.5;
+        my = my/canvas.height -0.5;
+        mx = mx*2;
+        my = my*-2;
+        moving = false;
+        // console.log(vec3(mx, my, radius));
+        start = end;
+        // Check bacteria from top to bottom (reverse order from how they are displayed on screen)
+        // So that the bateria on top will deleted not the one on the bottom
+        //radius = ~0.3
+
+    }
+
+    canvas.onmousemove = function(ev) {
+        var mx = ev.clientX, my = ev.clientY;
+        mx = mx/canvas.width -0.5;
+        my = my/canvas.height -0.5;
+        mx = mx*2;
+        my = my*-2;
+        if((-0.3 <= mx && mx <= 0.3) && (-0.3 <= my && my <= 0.3)){
+            if (moving) {
+                // console.log('moving');
+                old_arc_x = arc_x;
+                old_arc_y = arc_y;
+                end = vec3(mx, my, radius);
+                delta_x = start[0] - end[0];
+                delta_y =  start[1] - end[1];
+                movementVector = vec3(delta_x, delta_y, radius);
+                // console.log("delta_x = " + movementVector[0]/12);
+                change_x = movementVector[0]/12;
+                angle_x = Math.asin((change_x/2) / 1)
+                // console.log("angle_x = " + angle_x);
+
+                // console.log("delta_y = " + movementVector[1]/12);
+                change_y = movementVector[1]/12;
+                angle_y = Math.asin((change_y/2) / 1);
+                // console.log("angle_y = " + angle_y);
+
+                arc_x = 2*Math.PI*3*(angle_x);
+                arc_y = 2*Math.PI*3*(angle_y);
+                // console.log("arc_x = " + arc_x);
+                // console.log("arc_y = " + arc_y);
+
+                arc_x = arc_x + old_arc_x;
+                arc_y = arc_y + old_arc_y;
+
+                if (arc_x < -6) {
+                    arc_x += 12;
+                } else if (arc_x > 6) {
+                    arc_x -= 12;
+                }
+                if (arc_y <= -6) {
+                    arc_y += 12;
+                } else if (arc_y > 6) {
+                    arc_y -= 12;
+                }
+                // console.log("arc_x = " + arc_x);
+                xeye = arc_x;
+                yeye = arc_y;
+                
+                eye = vec3(xeye, yeye, zeye);
+            } 
+        }
+        
+        // Check bacteria from top to bottom (reverse order from how they are displayed on screen)
+        // So that the bateria on top will deleted not the one on the bottom
+        //radius = ~0.3
+
+    }
 }
 
 
-function render() {
+function render(program) {
     // clear the screen
     gl.clear( gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
     
    
     // equation of a sphere in x y z coordinates
-    eye = vec3(radius*Math.sin(theta)*Math.cos(phi), 
-        radius*Math.sin(theta)*Math.sin(phi), radius*Math.cos(theta));
-   // eye = 0, 0, 1.5
+    //eye = vec3(radius*Math.sin(theta)*Math.cos(phi), 
+    // /    radius*Math.sin(theta)*Math.sin(phi), radius*Math.cos(theta));
+    // eye = vec3(0, yeye, radius);
 
    // eye is the position of the camera
    // at is the position where the camera is looking at (the origin)
@@ -254,6 +365,10 @@ function render() {
     gl.uniformMatrix4fv(modelViewMatrixLoc, false, flatten(modelViewMatrix) );
     gl.uniformMatrix4fv(projectionMatrixLoc, false, flatten(projectionMatrix) );
     gl.uniformMatrix3fv(normalMatrixLoc, false, flatten(normalMatrix) );
+
+    gl.uniform4fv(ambiantLoc ,flatten(ambientProduct) );
+    gl.uniform4fv(diffuseLoc ,flatten(diffuseProduct) );
+    gl.uniform4fv(specularLoc ,flatten(specularProduct) );
         
 
     // index is a count of the points in are array
@@ -262,4 +377,30 @@ function render() {
         gl.drawArrays( gl.TRIANGLES, i, 3 );
 
     window.requestAnimFrame(render);
+}
+
+function toggleLights() {
+    button = document.getElementById("toggleLights");
+
+    if(lightAmbient[0] == 0) {
+        console.log("lights on");
+        lightAmbient = vec4(0.2, 0.2, 0.2, 1.0 );
+        lightDiffuse = vec4( 1.0, 1.0, 1.0, 1.0 );
+        lightSpecular = vec4( 1.0, 1.0, 1.0, 1.0 );
+
+        ambientProduct = mult(lightAmbient, materialAmbient);
+        diffuseProduct = mult(lightDiffuse, materialDiffuse);
+        specularProduct = mult(lightSpecular, materialSpecular);
+    } else {
+        console.log("lights off");
+        lightAmbient = lightsOff;
+        lightDiffuse = lightsOff;
+        lightSpecular = lightsOff;
+
+        ambientProduct = mult(lightAmbient, materialAmbient);
+        diffuseProduct = mult(lightDiffuse, materialDiffuse);
+        specularProduct = mult(lightSpecular, materialSpecular);
+    }
+
+    
 }
