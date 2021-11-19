@@ -129,23 +129,6 @@ function rotateVector(axisV, v, sizeDegree){
     var rotatedVec = vAddition(axisV, vrp);
     return rotatedVec
 }
-
-function randomCordinates() {
-    var r = 0.3;
-    var z = Math.random()*0.3;
-    if (Math.random()<0.5)
-     z = -z;
-
-    var phi = Math.acos(z/r);
-    var theta = Math.random()*2*Math.PI;
-    var x = Math.cos(theta)*r*Math.sin(phi);
-    var y = Math.sin(theta)*r*Math.sin(phi);
-
-    rc = vec4(x,y,z,0); // change 0 to the required value
-    
-    return rc;
-}
-
 function drawBacteria(a, sizeDegree){
     // radial distance
     var r = Math.sqrt(a[0]*a[0] + a[1]*a[1] + a[2]*a[2]);
@@ -275,7 +258,7 @@ window.onload = function init() {
    // subdivide into many triangles that make up a circle
    // put resulting points into normalsArray
     tetrahedron(va, vb, vc, vd, numTimesToSubdivide);
-    drawBacteria(randomCordinates(), 20);
+    drawBacteria(vec4(1.0, -0.5, -0.2, 1), 20);
     // console.log("points: " +pointsArray);
     // console.log("colours: " + colourArray);
     // create buffers for sphere = 1,2,3,4,5,6
