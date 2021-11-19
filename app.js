@@ -98,7 +98,75 @@ function configureCubeMap() {
     gl.texParameteri(gl.TEXTURE_CUBE_MAP,gl.TEXTURE_MAG_FILTER,gl.NEAREST);
     gl.texParameteri(gl.TEXTURE_CUBE_MAP,gl.TEXTURE_MIN_FILTER,gl.NEAREST);
 }
+// Vector Addition
+function vAddition(a,b){
+    return new vec4(a[0] + b[0],a[1] + b[1], a[2] + b[2], 1);
+}
 
+// Vector Subtraction
+function vSubtraction(a, b){
+    return new vec4(a[0] - b[0],a[1] - b[1], a[2] - b[2], 1);
+}
+
+function vsMultiplication(a, b){
+    return new vec4(a[0] * b,a[1] * b, a[2] * b, 1);
+}
+// Dot Product
+dot = (a, b) => a.map((x, i) => a[i] * b[i]).reduce((m, n) => m + n);
+
+// Cross Product
+function cross(a, b){
+    return new vec3(a[1]*b[2] - a[2]*b[1], a[2]*b[0] - a[0]*b[2], a[0]*b[1] - a[1]*b[0]);
+}
+function rotateVector(axisV, v, sizeDegree){
+    sizeDegree = sizeDegree * Math.PI / 180;
+    var vr = vSubtraction(v, axisV);
+    var vrp = vsMultiplication(vr,Math.cos(sizeDegree));
+    var tempCross = cross(axisV, vr);
+    tempCross = vsMultiplication(tempCross, Math.sin(sizeDegree));
+    vrp = vAddition(vrp, tempCross);
+    var rotatedVec = vAddition(axisV, vrp);
+    return rotatedVec
+}
+function drawBacteria(a, sizeDegree){
+    // radial distance
+    var r = Math.sqrt(a[0]*a[0] + a[1]*a[1] + a[2]*a[2]);
+    console.log("radial distance: ",r);
+    // polar angle
+    var pa = Math.acos(a[2]/r);
+    console.log("polar angle: ",pa);
+    // sizeDegree determines the size of the bacteria (larger degree means larger bacteria)
+
+    var newPa = pa + (Math.PI/180*sizeDegree);
+    // azimuthal angle
+    var aza = Math.atan(a[1]/a[0]);
+    if(a[0]<0){
+        aza += Math.PI;
+    }
+    console.log("azimuthal angle: ",aza * 180 / Math.PI);
+
+    var newV = vec4(r*Math.cos(aza)*Math.sin(newPa),r*Math.sin(newPa)*Math.sin(aza),r*Math.cos(newPa),1);
+    // rotation angle (less is computationally expansive)
+    var rotationAngle = 5;
+    for( let i = 0; i < (360/rotationAngle); i ++){
+        console.log("newV: ", newV)
+        var rotatedVector = rotateVector(a, newV, rotationAngle);
+
+        pointsArray.push(a);
+        pointsArray.push(newV);      
+        pointsArray.push(rotatedVector);
+       
+        // normals are vectors
+        
+        normalsArray.push(a[0],a[1], a[2]);
+        normalsArray.push(newV[0],newV[1], newV[2]);
+        normalsArray.push(rotatedVector[0],rotatedVector[1], rotatedVector[2]);
+    
+        index += 3;
+        newV = rotatedVector;
+    }
+    
+}
 
 // add the vectors of a triangle to normalsArray    
 function triangle(a, b, c) {
@@ -181,6 +249,7 @@ window.onload = function init() {
    // put resulting points into normalsArray
     tetrahedron(va, vb, vc, vd, numTimesToSubdivide);
 
+    drawBacteria(vec4(-1.0, 0.5, 0.2, 1), 20);
     // create buffers for sphere = 1,2,3,4,5,6
     var nBuffer = gl.createBuffer();
     gl.bindBuffer( gl.ARRAY_BUFFER, nBuffer);
