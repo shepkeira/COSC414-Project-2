@@ -20,3 +20,14 @@
 - [ ] The game wins if the bacteria get too big & The player wins if all bacteria are poisoned before the game wins
 - [ ] (Bonus) The effect of the poison administered also propagates outward from the point of insertion of the position until all the bacteria are destroyed.
 - [ ] (Bonus) When a bacterial culture is hit, use a simple 2D particle system to simulate an explosion at the point where the poison is administered.
+
+### New Plan
+- [ ] Generate bacteria at a fixed location (literally just draw it on the front of the circle) in whatever shape is easiest (easy to colour one of the triangles different? do that) (bacteria doesn't grow) all different colours. Do like 3 of them
+- [ ]  Get ride of the bacteria by clicking on them (do not use the interactive controls for this! just pretend its a 2D surface!)
+- [ ]  Win/Loose cases but make it a time limit instead of based on the bateria's growth
+
+#### If Time Allows
+- [ ]  bacteria grows
+- [ ]  bacteria is actually a circle
+- [ ]  bacteria is generated at a random spot around the circle (this would require the interactive controls works with the clicking)
+- [ ]  bonuses

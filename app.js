@@ -8,6 +8,7 @@ var index = 0;
 
 var pointsArray = [];
 var normalsArray = [];
+var colourArray = [];
 
 
 var near = -10;
@@ -162,11 +163,17 @@ function drawBacteria(a, sizeDegree){
         normalsArray.push(newV[0],newV[1], newV[2]);
         normalsArray.push(rotatedVector[0],rotatedVector[1], rotatedVector[2]);
     
+        colourArray.push(colour[0],colour[1], colour[2], colour[3]);
+        colourArray.push(colour[0],colour[1], colour[2], colour[3]);
+        colourArray.push(colour[0],colour[1], colour[2], colour[3]);
+   
         index += 3;
         newV = rotatedVector;
     }
     
 }
+var colour = vec4(1, 0, 0, 1);
+var colourAttributeLocation;
 
 // add the vectors of a triangle to normalsArray    
 function triangle(a, b, c) {
@@ -176,12 +183,15 @@ function triangle(a, b, c) {
      pointsArray.push(a);
      pointsArray.push(b);      
      pointsArray.push(c);
-    
      // normals are vectors
      
      normalsArray.push(a[0],a[1], a[2]);
      normalsArray.push(b[0],b[1], b[2]);
      normalsArray.push(c[0],c[1], c[2]);
+
+     colourArray.push(colour[0],colour[1], colour[2], colour[3]);
+     colourArray.push(colour[0],colour[1], colour[2], colour[3]);
+     colourArray.push(colour[0],colour[1], colour[2], colour[3]);
 
      index += 3;
      
@@ -248,13 +258,14 @@ window.onload = function init() {
    // subdivide into many triangles that make up a circle
    // put resulting points into normalsArray
     tetrahedron(va, vb, vc, vd, numTimesToSubdivide);
-
     drawBacteria(vec4(-1.0, 0.5, 0.2, 1), 20);
+    // console.log("points: " +pointsArray);
+    // console.log("colours: " + colourArray);
     // create buffers for sphere = 1,2,3,4,5,6
     var nBuffer = gl.createBuffer();
     gl.bindBuffer( gl.ARRAY_BUFFER, nBuffer);
     gl.bufferData( gl.ARRAY_BUFFER, flatten(normalsArray), gl.STATIC_DRAW );
-    
+    // console.log("normal array " + normalsArray.length);
     // create variable for attribute vNormal
     var vNormal = gl.getAttribLocation( program, "vNormal" );
     gl.vertexAttribPointer( vNormal, 3, gl.FLOAT, false, 0, 0 );
@@ -264,21 +275,25 @@ window.onload = function init() {
     var vBuffer = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, vBuffer);
     gl.bufferData(gl.ARRAY_BUFFER, flatten(pointsArray), gl.STATIC_DRAW);
-    
+    // console.log("points array " + pointsArray.length);
     // create variable for attribute vPosition
     var vPosition = gl.getAttribLocation( program, "vPosition");
     gl.vertexAttribPointer(vPosition, 4, gl.FLOAT, false, 0, 0);
     gl.enableVertexAttribArray(vPosition);
+
+    var cBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, cBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(flatten(colourArray)), gl.STATIC_DRAW);
+    // console.log("points array " + colourArray.length);
+
+    vertColour = gl.getAttribLocation(program, "vColour");
+    gl.vertexAttribPointer(vertColour, 4, gl.FLOAT, false, 4 * Float32Array.BYTES_PER_ELEMENT, 0);
+    gl.enableVertexAttribArray(vertColour);
     
     // create variables for Uniforms modelViewMatrix, projectionMatrix, and normalMatrix
     modelViewMatrixLoc = gl.getUniformLocation( program, "modelViewMatrix" );
     projectionMatrixLoc = gl.getUniformLocation( program, "projectionMatrix" );
     normalMatrixLoc = gl.getUniformLocation( program, "normalMatrix" );
-    
-    // create texture map
-    configureCubeMap();
-    gl.activeTexture( gl.TEXTURE0 );
-    gl.uniform1i(gl.getUniformLocation(program, "texMap"),0); 
 
     // set ambientProduct, diffuseProduct, and specularProduct to values determined before
     // set lightPosition, and materialShininess to constants set at the beginning
@@ -343,10 +358,10 @@ window.onload = function init() {
                 delta_x = start[0] - end[0];
                 delta_y =  start[1] - end[1];
                 movementVector = vec3(delta_x, delta_y, radius);
-                console.log("delta_x = " + movementVector[0]/12);
+                // console.log("delta_x = " + movementVector[0]/12);
                 change_x = movementVector[0]/12;
                 angle_x = Math.asin((change_x/2) / 1)
-                console.log("angle_x = " + angle_x);
+                // console.log("angle_x = " + angle_x);
 
                 // console.log("delta_y = " + movementVector[1]/12);
                 change_y = movementVector[1]/12;
@@ -355,7 +370,7 @@ window.onload = function init() {
 
                 arc_x = 2*Math.PI*3*(angle_x);
                 arc_y = 2*Math.PI*3*(angle_y);
-                console.log("arc_x = " + arc_x);
+                // console.log("arc_x = " + arc_x);
                 // console.log("arc_y = " + arc_y);
 
                 arc_x = arc_x + old_arc_x;
@@ -371,7 +386,7 @@ window.onload = function init() {
                 } else if (arc_y > 6) {
                     arc_y -= 12;
                 }
-                console.log("arc_x = " + arc_x);
+                // console.log("arc_x = " + arc_x);
                 xeye = arc_x;
                 yeye = arc_y;
                 
@@ -447,7 +462,7 @@ function render(program) {
 function toggleLights() {
     button = document.getElementById("toggleLights");
 
-    if(lightAmbient[0] == 1) {
+    if(lightAmbient[0] == 0) {
         console.log("lights on");
         lightAmbient = vec4(0.2, 0.2, 0.2, 1.0 );
         lightDiffuse = vec4( 1.0, 1.0, 1.0, 1.0 );
@@ -458,7 +473,7 @@ function toggleLights() {
         specularProduct = mult(lightSpecular, materialSpecular);
     } else {
         console.log("lights off");
-        lightAmbient = vec4(1,0,0,0);
+        lightAmbient = lightsOff;
         lightDiffuse = lightsOff;
         lightSpecular = lightsOff;
 
