@@ -127,45 +127,41 @@ function rotateVector(axisV, v, sizeDegree){
     tempCross = vsMultiplication(tempCross, Math.sin(sizeDegree));
     vrp = vAddition(vrp, tempCross);
     var rotatedVec = vAddition(axisV, vrp);
-    return rotatedVec
+    return rotatedVec;
 }
-function drawBacteria(a, sizeDegree){
+function drawBacteria(pos, colorVector, sizeDegree){
     // radial distance
-    var r = Math.sqrt(a[0]*a[0] + a[1]*a[1] + a[2]*a[2]);
-    console.log("radial distance: ",r);
+    var r = Math.sqrt(pos[0]*pos[0] + pos[1]*pos[1] + pos[2]*pos[2]);
     // polar angle
-    var pa = Math.acos(a[2]/r);
-    console.log("polar angle: ",pa);
+    var pa = Math.acos(pos[2]/r);
     // sizeDegree determines the size of the bacteria (larger degree means larger bacteria)
 
     var newPa = pa + (Math.PI/180*sizeDegree);
     // azimuthal angle
-    var aza = Math.atan(a[1]/a[0]);
-    if(a[0]<0){
+    var aza = Math.atan(pos[1]/pos[0]);
+    if(pos[0]<0){
         aza += Math.PI;
     }
-    console.log("azimuthal angle: ",aza * 180 / Math.PI);
 
     var newV = vec4(r*Math.cos(aza)*Math.sin(newPa),r*Math.sin(newPa)*Math.sin(aza),r*Math.cos(newPa),1);
     // rotation angle (less is computationally expansive)
     var rotationAngle = 5;
     for( let i = 0; i < (360/rotationAngle); i ++){
-        console.log("newV: ", newV)
-        var rotatedVector = rotateVector(a, newV, rotationAngle);
+        var rotatedVector = rotateVector(pos, newV, rotationAngle);
 
-        pointsArray.push(a);
+        pointsArray.push(pos);
         pointsArray.push(newV);      
         pointsArray.push(rotatedVector);
        
         // normals are vectors
         
-        normalsArray.push(a[0],a[1], a[2]);
+        normalsArray.push(pos[0],pos[1], pos[2]);
         normalsArray.push(newV[0],newV[1], newV[2]);
         normalsArray.push(rotatedVector[0],rotatedVector[1], rotatedVector[2]);
     
-        colourArray.push(colour[0],colour[1], colour[2], colour[3]);
-        colourArray.push(colour[0],colour[1], colour[2], colour[3]);
-        colourArray.push(colour[0],colour[1], colour[2], colour[3]);
+        colourArray.push(colorVector[0],colorVector[1], colorVector[2], colorVector[3]);
+        colourArray.push(colorVector[0],colorVector[1], colorVector[2], colorVector[3]);
+        colourArray.push(colorVector[0],colorVector[1], colorVector[2], colorVector[3]);
    
         index += 3;
         newV = rotatedVector;
@@ -258,6 +254,14 @@ window.onload = function init() {
    // subdivide into many triangles that make up a circle
    // put resulting points into normalsArray
     tetrahedron(va, vb, vc, vd, numTimesToSubdivide);
+    
+    // temporary array of positions
+    var ary = [vec4(-1.0, 0.5, 0.2, 1),vec4(1.0, 0.5, 0.2, 1),vec4(0.5, 0.5, 1.5, 1)]
+    for(let i = 0; i < 3; i++){
+        var tempColorVector = vec4(Math.random(), Math.random(), Math.random(), 1);
+        console.log(tempColorVector);
+        drawBacteria(ary[i], tempColorVector, 20);
+    }
     drawBacteria(vec4(-1.0, 0.5, 0.2, 1), 20);
     // console.log("points: " +pointsArray);
     // console.log("colours: " + colourArray);
