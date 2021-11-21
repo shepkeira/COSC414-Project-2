@@ -171,11 +171,38 @@ function drawBacteria(pos, colorVector, sizeDegree){
 var colour = vec4(1, 0, 0, 1);
 var colourAttributeLocation;
 
+function randomCordinates() {
+    var r = 1.01;
+    var z = Math.random();
+    if (Math.random()<0.5)
+     z = -z;
+
+    var phi = Math.acos(z/r);
+    var theta = Math.random()*2*Math.PI;
+    var x = Math.cos(theta)*r*Math.sin(phi);
+    var y = Math.sin(theta)*r*Math.sin(phi);
+
+    point = vec4(x,y,z,1);
+    
+    return point;
+}
+
+function randomColor(){
+    var R = Math.random();
+    var G = Math.random();
+    var B = Math.random();
+    var A = 1;
+
+    Color = vec4(R,G,B,1);
+    
+    return Color;
+}
+
+
+
 // add the vectors of a triangle to normalsArray    
 function triangle(a, b, c) {
 
-
-     
      pointsArray.push(a);
      pointsArray.push(b);      
      pointsArray.push(c);
@@ -254,14 +281,9 @@ window.onload = function init() {
    // subdivide into many triangles that make up a circle
    // put resulting points into normalsArray
     tetrahedron(va, vb, vc, vd, numTimesToSubdivide);
-    
-    // temporary array of positions
-    var ary = [vec4(-1.0, 0.5, 0.2, 1),vec4(1.0, 0.5, 0.2, 1),vec4(0.5, 0.5, 1.5, 1)]
-    for(let i = 0; i < 3; i++){
-        var tempColorVector = vec4(Math.random(), Math.random(), Math.random(), 1);
-        console.log(tempColorVector);
-        drawBacteria(ary[i], tempColorVector, 20);
-    }
+	drawBacteria(randomCordinates(),randomColor(), 20);
+    drawBacteria(randomCordinates(),randomColor(), 20);
+    drawBacteria(randomCordinates(),randomColor(), 20);
     // console.log("points: " +pointsArray);
     // console.log("colours: " + colourArray);
     // create buffers for sphere = 1,2,3,4,5,6
