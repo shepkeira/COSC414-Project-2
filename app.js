@@ -262,7 +262,6 @@ window.onload = function init() {
         console.log(tempColorVector);
         drawBacteria(ary[i], tempColorVector, 20);
     }
-    drawBacteria(vec4(-1.0, 0.5, 0.2, 1), 20);
     // console.log("points: " +pointsArray);
     // console.log("colours: " + colourArray);
     // create buffers for sphere = 1,2,3,4,5,6
