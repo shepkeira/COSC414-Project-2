@@ -101,11 +101,25 @@ main()
 
 <script type="text/javascript" src="helper.js"></script>
 <script type="text/javascript" src="app.js"></script>
+<style>
+    div.info{
+        float: right;
+        align-items: center;
+        margin-right: 20%;
+        margin-top: 10%;
+        font-family: sans-serif;
+    }
+    </style>
 
 <body>
 <canvas id="gl-canvas" width="512" height="512" style="border:black 3px solid;">
 Oops ... your browser doesn't support the HTML5 canvas element
 </canvas>
+<div class='info'>
+    <h1>BACTERIA ZAPPER</h1>
+    <h3> SCORE: <span id="scoreDisplay"></span></h1>
+    <h3> LIVES: <span id="lives"></span></h3>
+    <h3> BACTERIA: <span id="bacteriaAlive"></span></h3>
 <br>
 <button type='button' id="toggleLights" onclick="toggleLights()">Toggle Lights</button>
 </body>
