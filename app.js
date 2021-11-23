@@ -589,7 +589,9 @@ function render(program) {
 
 function click() {
     return function(event) {
-        
+        //temprorary untill this function works
+        //to demonstrate the possiblity of gaining points
+        score += Math.round(frame);
       let offset = elementOffset(event.target);
       let x = event.clientX - offset.x;
       let y = event.target.height - (event.clientY - offset.y);
@@ -597,7 +599,8 @@ function click() {
       let color = new Uint8Array(4);
       gl.readPixels(x, y, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, color);
       let id = getId(color); 
-      alert(color);
+        console.log(color); // not reading the required values
+
 
       for (let i = 0; i < bacteriaArray.length; i++){
         if (bacteriaArray[i][4] == id){
